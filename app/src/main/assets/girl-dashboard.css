@@ -1,0 +1,66 @@
+/* V1.2 girl dashboard — Android WebView only. Does not change original website. */
+body.msy-girl-app,body.msy-girl-app .app{background:#fcf9ff!important;color:#252054!important}
+body.msy-girl-app .app .topbar{background:#fffaff!important;border-bottom:1px solid #eee6fb!important;padding:9px 16px!important;min-height:67px!important;box-shadow:0 4px 14px rgba(112,70,154,.06)!important}
+body.msy-girl-app .app .topbar-title{margin-inline-end:auto!important}
+body.msy-girl-app .app .topbar-title b{color:#281a67!important;font-weight:850!important;font-size:16px!important}
+body.msy-girl-home .app .topbar-title b{font-size:0!important}
+body.msy-girl-home .app .topbar-title b:after{content:'پنل دانش‌آموز';font-size:17px!important}
+body.msy-girl-app .app .topbar-title small{color:#8d81aa!important}
+body.msy-girl-app .app .icon-btn{border-radius:16px!important;background:#f0e6ff!important;border:0!important;color:#7144c9!important;width:41px!important;height:41px!important}
+body.msy-girl-app .app .bottom-nav{direction:rtl!important;border-top:1px solid #efe8fc!important;background:#fff!important;box-shadow:0 -5px 20px #593a8c0c!important;padding:7px 8px max(9px,env(safe-area-inset-bottom))!important}
+body.msy-girl-app .bottom-nav button{min-width:0!important;flex:1!important;color:#5e557b!important;border-radius:19px!important;padding:8px 3px!important;min-height:60px!important;display:flex!important;flex-direction:column!important;align-items:center!important;gap:5px!important;font-size:12px!important;justify-content:center!important}
+body.msy-girl-app .bottom-nav button small{font-size:11px!important;white-space:nowrap}
+body.msy-girl-app .bottom-nav button.active{color:#fff!important;background:linear-gradient(145deg,#9569e7,#714fca)!important;box-shadow:0 5px 14px #9562cc3b!important}
+body.msy-girl-app #p58Launch{display:none!important}
+body.msy-girl-home #page> :not(#msyGirlHome){display:none!important}
+body.msy-girl-home #page{padding:13px 13px 26px!important;max-width:800px!important;margin-inline:auto!important;display:block!important}
+#msyGirlHome{direction:rtl;color:#21184d;font-family:inherit!important}
+#msyGirlHome *{box-sizing:border-box}
+#msyGirlHome button{font-family:inherit;cursor:pointer;text-align:right}
+#msyGirlHome .msy-girl-hero{min-height:154px;position:relative;display:flex;overflow:hidden;border-radius:27px;background:linear-gradient(120deg,#fbe6f4 0%,#f4e4fd 60%,#ecdfff 100%);border:1px solid #efdaed;box-shadow:0 10px 24px #9c67bb16}
+#msyGirlHome .msy-girl-greeting{z-index:1;flex:1;padding:20px 18px 17px 4px;max-width:64%}
+#msyGirlHome .msy-girl-heart{color:#ed579f;font-size:21px;margin:0 0 4px}
+#msyGirlHome h1{font-size:22px;color:#271265!important;margin:0 0 10px;font-weight:850;line-height:1.3}
+#msyGirlHome .msy-girl-greeting p{font-size:12px;color:#716482;line-height:1.75;margin:0 0 9px;overflow-wrap:anywhere}
+#msyGirlHome .msy-school-status{display:inline-block;font-size:11px;background:#fffc;border:1px solid #fff;border-radius:25px;padding:4px 9px;color:#725594}
+#msyGirlHome .msy-girl-art{width:40%;align-self:stretch;position:relative;display:flex;align-items:stretch}
+#msyGirlHome .msy-girl-art img{object-fit:cover;object-position:51% center;display:block;width:100%;border-radius:20px 0 0 20px;mask-image:linear-gradient(270deg,#000 60%,transparent 100%)}
+#msyGirlHome .msy-sync-row{display:flex;flex-direction:row-reverse;align-items:center;justify-content:space-between;gap:6px;margin:15px 0 10px}
+#msyGirlHome .msy-sync-button{display:flex;align-items:center;gap:7px;white-space:nowrap;justify-content:center;color:white;background:linear-gradient(120deg,#a076ed,#784bd0);border:0;border-radius:24px;padding:12px 16px;box-shadow:0 8px 15px #8759dd32;font-size:14px;font-weight:750}
+#msyGirlHome .msy-sync-status{display:flex;gap:4px;align-items:center;font-size:11px;color:#706387}
+#msyGirlHome .msy-offline-notice{border-radius:17px;background:#f1eaff;color:#6a568f;font-size:11px;line-height:1.8;padding:10px 13px;margin-bottom:14px}
+#msyGirlHome .msy-feature-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px;margin-bottom:15px}
+#msyGirlHome .msy-tile{grid-column:span 2;border:1px solid #f4edf8;border-radius:21px;padding:14px 6px 10px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:117px;position:relative;text-align:center;color:#312263;box-shadow:0 5px 14px #6d51b80c}
+#msyGirlHome .msy-tile-wide{grid-column:span 3;min-height:102px}
+#msyGirlHome .msy-pink{background:linear-gradient(150deg,#fff1fa,#fbe3f0)}
+#msyGirlHome .msy-blue{background:linear-gradient(150deg,#f3f4ff,#e7eafe)}
+#msyGirlHome .msy-rose{background:linear-gradient(150deg,#fff3f8,#ffe5ef)}
+#msyGirlHome .msy-mint{background:linear-gradient(150deg,#f1fcfa,#e4f7f1)}
+#msyGirlHome .msy-violet{background:linear-gradient(150deg,#f9f3ff,#f0e6fa)}
+#msyGirlHome .msy-lilac{background:linear-gradient(150deg,#faf1ff,#f1e8ff)}
+#msyGirlHome .msy-peach{background:linear-gradient(150deg,#fff9ee,#fff0df)}
+#msyGirlHome .msy-tile-ico{width:39px;height:39px;border-radius:13px;background:#ffffffc2;display:grid;place-items:center;color:#915fdc;margin-bottom:6px;box-shadow:0 3px 9px #7b51a417}
+#msyGirlHome .msy-rose .msy-tile-ico,#msyGirlHome .msy-pink .msy-tile-ico{color:#db5a9f}
+#msyGirlHome .msy-mint .msy-tile-ico{color:#3eb5a4}
+#msyGirlHome .msy-peach .msy-tile-ico{color:#dfac42}
+#msyGirlHome .msy-tile strong{color:#2c215d;font-size:13px;font-weight:850;line-height:1.4}
+#msyGirlHome .msy-tile small{color:#8a7799;font-size:10px;margin-top:5px;line-height:1.5}
+#msyGirlHome .msy-tile-arrow{display:none}
+#msyGirlHome .msy-today,#msyGirlHome .msy-actions{border:1px solid #eee6f6;border-radius:24px;padding:13px;margin-bottom:13px;background:#fff;box-shadow:0 8px 21px #6652930b}
+#msyGirlHome .msy-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+#msyGirlHome .msy-section-head h2{font-size:16px;font-weight:850;color:#2e2167;margin:0}
+#msyGirlHome .msy-section-head span,#msyGirlHome .msy-section-head button{font-size:11px;color:#9364d1;border:0;background:none}
+#msyGirlHome .msy-today-item{width:100%;display:flex;gap:10px;align-items:center;border:0;border-radius:16px;padding:12px 10px;margin:7px 0}
+#msyGirlHome .msy-today-task{background:#fff0f7}#msyGirlHome .msy-today-exam{background:#fff4e8}#msyGirlHome .msy-today-message{background:#eee8ff}
+#msyGirlHome .msy-today-icon{color:#aa62d9}
+#msyGirlHome .msy-today-copy{display:flex;flex-direction:column;gap:5px;flex:1;min-width:0}
+#msyGirlHome .msy-today-copy b{font-size:12px;font-weight:800;color:#35265f}
+#msyGirlHome .msy-today-copy small{font-size:11px;color:#87769e}
+#msyGirlHome .msy-today-chevron{color:#a28bc2}
+#msyGirlHome .msy-action-line{width:100%;display:flex;justify-content:space-between;align-items:center;background:#faf7ff;border:1px solid #f1ebfa;border-radius:14px;padding:10px;margin:5px 0;color:#61557d;font-size:12px}
+#msyGirlHome .msy-action-line b{font-size:14px;color:#8050ca}
+#msyGirlHome .msy-more-row{display:flex;gap:10px;justify-content:space-between;padding:5px 0 15px}
+#msyGirlHome .msy-more-row button{display:flex;align-items:center;justify-content:center;gap:7px;flex:1;border:0;border-radius:16px;background:#eee8ff;color:#6c46b0;padding:12px 7px;font-size:12px;font-weight:750}
+#msyGirlHome .msy-more-row b{color:#9a55cb}
+@media(max-width:370px){#msyGirlHome h1{font-size:19px}#msyGirlHome .msy-tile strong{font-size:12px}#msyGirlHome .msy-tile small{font-size:9px}#msyGirlHome .msy-girl-greeting{padding:19px 13px 17px 0}#msyGirlHome .msy-sync-button{padding:10px 11px;font-size:12px}}
+@media(prefers-reduced-motion:reduce){#msyGirlHome *{animation:none!important;transition:none!important}}

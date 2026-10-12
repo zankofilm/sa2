@@ -1,0 +1,23 @@
+{
+  "name": "madreseyar-school-management",
+  "version": "72.35.17",
+  "private": true,
+  "type": "module",
+  "description": "مدرسه‌یار — P67.19.4 بسته تثبیت نصب و تست ایزوله بدون داده‌های زنده",
+  "scripts": {
+    "start": "node app_wrapper.cjs",
+    "check": "node --check server.mjs && node --check app.js && node --check student/app.js && node --check guardian/app.js && node --check teacher/app.js && node --check attendance/app.js && node --check restore-encrypted-backup.mjs",
+    "restore-backup": "node restore-encrypted-backup.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "preflight": "node install-preflight.mjs",
+    "test:teacher": "node --test tests/source-contracts.test.mjs",
+    "security:readonly": "node --test tests/http-isolated.test.mjs",
+    "qa:full": "npm run preflight && npm test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0"
+  }
+}
