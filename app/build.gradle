@@ -7,8 +7,8 @@ android {
         applicationId 'ir.madreseyar.student'
         minSdk 26
         targetSdk 35
-        versionCode 2
-        versionName '1.2.0'
+        versionCode 3
+        versionName '1.3.0'
         buildConfigField 'String', 'STUDENT_URL', '"https://scooljavanrood.ir/app/student/"'
     }
     buildFeatures { buildConfig true }
@@ -27,4 +27,5 @@ if (file('google-services.json').exists()) {
 
 dependencies {
     implementation 'com.google.firebase:firebase-messaging:24.1.1'
+    implementation 'androidx.biometric:biometric:1.1.0'
 }
