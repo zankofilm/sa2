@@ -2,6 +2,12 @@ package ir.madreseyar.student;
 
 import android.Manifest;
 import android.app.Activity;
+import android.provider.Settings;
+import android.widget.Button;
+import androidx.fragment.app.FragmentActivity;
+import androidx.biometric.BiometricPrompt;
+import androidx.biometric.BiometricManager;
+import androidx.core.content.ContextCompat;
 import android.app.DownloadManager;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
@@ -43,12 +49,17 @@ import java.util.UUID;
 /** Thin native shell around the existing, authoritative school student portal.
  * No local copies of live student records are bundled in the APK.
  * Existing IndexedDB and Service Worker caching stay under the verified HTTPS origin. */
-public final class MainActivity extends Activity {
+public final class MainActivity extends FragmentActivity {
     private static final String EXPECTED_HOST = "scooljavanrood.ir";
     private static final String TOKEN_KEY = "msy.v13.token";
     private static final int NOTIFICATION_PERMISSION_REQUEST = 901;
     private static final int FILE_REQUEST = 902;
     private final Handler handler = new Handler(Looper.getMainLooper());
+    private static final String BIO_PREFS="madreseyar-biometric-v13";
+    private FrameLayout secureCover;
+    private boolean secureUnlocked = true;
+    private boolean biometricBusy = false;
+    private boolean fileChooserPending = false;
     private WebView web;
     private ValueCallback<Uri[]> uploadCallback;
     private String pushToken = "";
@@ -84,6 +95,8 @@ public final class MainActivity extends Activity {
         root.setBackgroundColor(Color.rgb(252,249,255));
         web = new WebView(this);
         root.addView(web, new FrameLayout.LayoutParams(-1,-1));
+        makeBiometricCover(root);
+        if (isBiometricEnabled()) lockScreen();
         setContentView(root);
         setupWeb();
     }
@@ -101,6 +114,8 @@ public final class MainActivity extends Activity {
         try {
             String css = readAsset("girl-dashboard.css");
             String js = readAsset("girl-dashboard.js");
+            String allCss = readAsset("girl-sections.css");
+            String allJs = readAsset("girl-sections.js");
             byte[] illustration;
             try (java.io.InputStream input=getAssets().open("hero-girl.png");
                  java.io.ByteArrayOutputStream out=new java.io.ByteArrayOutputStream()) {
@@ -114,6 +129,10 @@ public final class MainActivity extends Activity {
                 "if(!s){s=document.createElement('style');s.id='msyNativeStyle';document.head.appendChild(s);}"+
                 "s.textContent="+JSONObject.quote(css)+";window.__msyGirlArtData="+JSONObject.quote(image)+";})()", null);
             web.evaluateJavascript(js, null);
+            web.evaluateJavascript("(function(){var s=document.getElementById('msyAllSectionsStyle');"+
+                "if(!s){s=document.createElement('style');s.id='msyAllSectionsStyle';document.head.appendChild(s);}s.textContent="+JSONObject.quote(allCss)+";})()",null);
+            web.evaluateJavascript("window.__msyAndroidBiometricAvailable=true;window.__msyBiometricEnabled="+isBiometricEnabled()+";",null);
+            web.evaluateJavascript(allJs,null);
         } catch (Exception ex) {
             android.util.Log.e("Madreseyar", "Student theme could not be loaded", ex);
         }
@@ -148,6 +167,11 @@ public final class MainActivity extends Activity {
         web.setWebViewClient(new WebViewClient() {
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri url = request.getUrl();
+                if("madreseyar-auth".equalsIgnoreCase(url.getScheme())){
+                    if(request.isForMainFrame() && webReady && isSafeStudentUrl(Uri.parse(view.getUrl())))
+                        biometricAction(String.valueOf(url.getHost()));
+                    return true;
+                }
                 if (isSafeStudentUrl(url)) return false;
                 if ("https".equalsIgnoreCase(url.getScheme())) {
                     openExternal(url); return true;
@@ -172,12 +196,14 @@ public final class MainActivity extends Activity {
             @Override public boolean onShowFileChooser(WebView w, ValueCallback<Uri[]> callback, FileChooserParams p) {
                 if(uploadCallback!=null) uploadCallback.onReceiveValue(null);
                 uploadCallback=callback;
+                fileChooserPending=true;
                 try {
                     Intent picker = p.createIntent();
                     picker.addCategory(Intent.CATEGORY_OPENABLE);
                     startActivityForResult(picker,FILE_REQUEST);
                     return true;
                 } catch(Exception e) {
+                    fileChooserPending=false;
                     uploadCallback=null;callback.onReceiveValue(null);
                     Toast.makeText(MainActivity.this,"انتخاب فایل در دسترس نیست",Toast.LENGTH_SHORT).show();
                     return false;
@@ -284,16 +310,29 @@ public final class MainActivity extends Activity {
         handler.postDelayed(this::navigatePending,700);
     }
     @Override protected void onResume() {
-        super.onResume(); if(web!=null){web.onResume();handler.postDelayed(this::tryRegisterPush,1000);}
+        super.onResume();
+        if(web!=null){web.onResume();handler.postDelayed(this::tryRegisterPush,1000);}
+        if(isBiometricEnabled()&&!secureUnlocked&&!biometricBusy && !fileChooserPending)
+            handler.postDelayed(()->{if(!biometricBusy&&!secureUnlocked)showBiometricPrompt("unlock");},400);
+    }
+    @Override protected void onUserLeaveHint(){
+        if(isBiometricEnabled()&&!biometricBusy&&!fileChooserPending)lockScreen();
+        super.onUserLeaveHint();
+    }
+    @Override protected void onStop(){
+        if(isBiometricEnabled()&&!biometricBusy&&!fileChooserPending)lockScreen();
+        super.onStop();
     }
     @Override protected void onPause() { if(web!=null)web.onPause();super.onPause(); }
     @Override protected void onDestroy() {handler.removeCallbacksAndMessages(null);if(web!=null)web.destroy();super.onDestroy();}
     @Override public void onBackPressed() {
+        if(isBiometricEnabled()&&!secureUnlocked)return;
         if(web!=null&&web.canGoBack())web.goBack();else super.onBackPressed();
     }
     @Override protected void onActivityResult(int requestCode,int resultCode,Intent data) {
         super.onActivityResult(requestCode,resultCode,data);
         if(requestCode!=FILE_REQUEST||uploadCallback==null)return;
+        fileChooserPending=false;
         Uri[] result = null;
         if(resultCode==RESULT_OK && data!=null){
             if(data.getClipData()!=null){int n=data.getClipData().getItemCount();result=new Uri[n];for(int i=0;i<n;i++)result[i]=data.getClipData().getItemAt(i).getUri();}
@@ -301,4 +340,121 @@ public final class MainActivity extends Activity {
         }
         uploadCallback.onReceiveValue(result);uploadCallback=null;
     }
+
+    // Biometric gate is deliberately local to this phone. It NEVER generates a school login
+    // token or bypasses the server's authorization/expiry checks.
+    private boolean isBiometricEnabled(){
+        return getSharedPreferences(BIO_PREFS,MODE_PRIVATE).getBoolean("enabled",false);
+    }
+    private void setBiometricEnabled(boolean value){
+        getSharedPreferences(BIO_PREFS,MODE_PRIVATE).edit().putBoolean("enabled",value).apply();
+        if(value)secureUnlocked=true;
+        if(!value){secureUnlocked=true;if(secureCover!=null)secureCover.setVisibility(View.GONE);}
+        updateBiometricWebState();
+    }
+    private void updateBiometricWebState(){
+        if(!webReady)return;
+        runJS("window.__msyBiometricEnabled="+isBiometricEnabled()+";window.dispatchEvent(new Event('msy:biometric-state')); ");
+    }
+    private void makeBiometricCover(FrameLayout root){
+        secureCover=new FrameLayout(this);
+        secureCover.setBackgroundColor(Color.rgb(251,247,255));
+        LinearLayout content=new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(23),dp(24),dp(23),dp(24));
+        content.setGravity(Gravity.CENTER);
+        android.graphics.drawable.GradientDrawable bg=new android.graphics.drawable.GradientDrawable();
+        bg.setColor(Color.WHITE);bg.setCornerRadius(dp(28));bg.setStroke(dp(1),Color.rgb(232,220,250));
+        content.setBackground(bg);
+        TextView icon=new TextView(this);
+        icon.setText("🔐");icon.setTextSize(46);icon.setGravity(Gravity.CENTER);
+        content.addView(icon,new LinearLayout.LayoutParams(-1,dp(76)));
+        TextView title=new TextView(this);
+        title.setText("بازگشایی مدرسه‌یار");title.setTextColor(Color.rgb(65,36,124));
+        title.setTextSize(21);title.setTypeface(null,Typeface.BOLD);title.setGravity(Gravity.CENTER);
+        content.addView(title,new LinearLayout.LayoutParams(-1,dp(46)));
+        TextView body=new TextView(this);
+        body.setText("برای حفاظت از اطلاعات دانش‌آموز، با اثر انگشت یا روش بیومتریک امن گوشی وارد شوید.");
+        body.setTextColor(Color.rgb(117,97,149));body.setTextSize(14);body.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams bodyP=new LinearLayout.LayoutParams(-1,-2);bodyP.setMargins(0,0,0,dp(22));
+        content.addView(body,bodyP);
+        Button open=new Button(this);
+        open.setText("بازکردن با اثر انگشت");open.setAllCaps(false);
+        open.setTextColor(Color.WHITE);open.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.rgb(132,82,212)));
+        open.setOnClickListener(v->showBiometricPrompt("unlock"));
+        content.addView(open,new LinearLayout.LayoutParams(-1,dp(54)));
+        TextView note=new TextView(this);
+        note.setText("این قفل جایگزین رمز ورود به حساب مدرسه نیست.");
+        note.setTextSize(11);note.setTextColor(Color.rgb(133,117,157));note.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams noteP=new LinearLayout.LayoutParams(-1,-2);noteP.setMargins(0,dp(16),0,0);
+        content.addView(note,noteP);
+        FrameLayout.LayoutParams cardP=new FrameLayout.LayoutParams(-1,-2,Gravity.CENTER);
+        cardP.setMargins(dp(25),0,dp(25),0);
+        secureCover.addView(content,cardP);
+        root.addView(secureCover,new FrameLayout.LayoutParams(-1,-1));
+        secureCover.setVisibility(View.GONE);
+    }
+    private void lockScreen(){
+        if(!isBiometricEnabled()||secureCover==null)return;
+        secureUnlocked=false;
+        secureCover.setVisibility(View.VISIBLE);
+        secureCover.bringToFront();
+    }
+    private void biometricAction(String action){
+        if(!"enable".equals(action)&&!"disable".equals(action))return;
+        // The button is only usable after a regular school login on the trusted student origin.
+        web.evaluateJavascript("Boolean(localStorage.getItem('msy.v13.token') && "+
+            "document.getElementById('appView')&&!document.getElementById('appView').classList.contains('hidden'))",answer->{
+            if(!"true".equals(answer)){
+                Toast.makeText(this,"ابتدا با حساب دانش‌آموز وارد شوید",Toast.LENGTH_LONG).show();return;
+            }
+            if("enable".equals(action)&&isBiometricEnabled())return;
+            if("disable".equals(action)&&!isBiometricEnabled())return;
+            showBiometricPrompt(action);
+        });
+    }
+    private void showBiometricPrompt(String mode){
+        if(biometricBusy)return;
+        int authenticators=BiometricManager.Authenticators.BIOMETRIC_STRONG;
+        if(Build.VERSION.SDK_INT>=30)authenticators |= BiometricManager.Authenticators.DEVICE_CREDENTIAL;
+        int result=BiometricManager.from(this).canAuthenticate(authenticators);
+        if(result!=BiometricManager.BIOMETRIC_SUCCESS){
+            Toast.makeText(this,"ابتدا اثر انگشت یا قفل امن گوشی را در تنظیمات ثبت کنید",Toast.LENGTH_LONG).show();
+            if("enable".equals(mode)){
+                try {startActivity(new Intent(Settings.ACTION_SECURITY_SETTINGS));}catch(Exception ignored){}
+            }
+            return;
+        }
+        biometricBusy=true;
+        BiometricPrompt.AuthenticationCallback callback=new BiometricPrompt.AuthenticationCallback(){
+            @Override public void onAuthenticationSucceeded(BiometricPrompt.AuthenticationResult result){
+                super.onAuthenticationSucceeded(result);
+                biometricBusy=false;
+                if("unlock".equals(mode)){
+                    secureUnlocked=true;
+                    if(secureCover!=null)secureCover.setVisibility(View.GONE);
+                    handler.postDelayed(()->navigatePending(),300);
+                }else if("enable".equals(mode)){
+                    setBiometricEnabled(true);
+                    Toast.makeText(MainActivity.this,"بازگشایی بیومتریک فعال شد",Toast.LENGTH_LONG).show();
+                }else if("disable".equals(mode)){
+                    setBiometricEnabled(false);
+                    Toast.makeText(MainActivity.this,"قفل اثر انگشت غیرفعال شد",Toast.LENGTH_LONG).show();
+                }
+            }
+            @Override public void onAuthenticationError(int errorCode,CharSequence err){
+                super.onAuthenticationError(errorCode,err);
+                biometricBusy=false; // If locked, keep the opaque cover in front of the WebView.
+            }
+        };
+        BiometricPrompt prompt=new BiometricPrompt(this,ContextCompat.getMainExecutor(this),callback);
+        BiometricPrompt.PromptInfo.Builder builder=new BiometricPrompt.PromptInfo.Builder()
+            .setTitle("مدرسه‌یار | تأیید هویت گوشی")
+            .setSubtitle("unlock".equals(mode)?"بازکردن پنل دانش‌آموز":
+                "enable".equals(mode)?"فعال‌سازی ورود با اثر انگشت":"غیرفعال‌کردن قفل اثر انگشت")
+            .setAllowedAuthenticators(authenticators);
+        if(Build.VERSION.SDK_INT<30)builder.setNegativeButtonText("انصراف");
+        prompt.authenticate(builder.build());
+    }
+
 }
